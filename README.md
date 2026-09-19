@@ -1,4 +1,4 @@
-# STL-ből SVG Terep Szeletelő — Felhasználói útmutató
+# STL-ből SVG terep szeletelő — Felhasználói útmutató
 
 Nagy teljesítményű Python eszköz 3D STL modellek (például digitális magasságmodellek, hegyvidéki terepek és építészeti modellek) 2D vízszintes keresztmetszetekre történő szeletelésére, rétegzett SVG vektorfájlok formájában exportálva.
 
