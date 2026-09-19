@@ -1,204 +1,228 @@
-# STL to SVG Terrain Slicer — User Guide
+# STL-ből SVG Terep Szeletelő — Felhasználói útmutató
 
-A high-performance Python tool for slicing 3D STL models (such as digital elevation models, mountain terrains, and architectural models) into 2D horizontal cross-sections exported as layered SVG vector files.
+Nagy teljesítményű Python eszköz 3D STL modellek (például digitális magasságmodellek, hegyvidéki terepek és építészeti modellek) 2D vízszintes keresztmetszetekre történő szeletelésére, rétegzett SVG vektorfájlok formájában exportálva.
 
-Designed especially for **laser cutting**, **CNC routing**, **stacked topographic models** (plywood, cardboard, acrylic), and **cartographic vector design**.
-
----
-
-## Table of Contents
-
-1. [Key Features](#key-features)
-2. [Installation & Requirements](#installation--requirements)
-3. [Quick Start](#quick-start)
-4. [How Layer Stacking Works](#how-layer-stacking-works)
-   - [Next-Level Alignment Guides (Red)](#1-next-level-alignment-guides-red)
-   - [Water Surface Detection (Blue)](#2-water-surface-detection-blue)
-   - [Cut Lines (Black)](#3-cut-lines-black)
-5. [CLI Options Reference](#cli-options-reference)
-6. [Practical Usage Examples](#practical-usage-examples)
-   - [Example 1: Fixed Sheet Thickness (Laser Cutting)](#example-1-fixed-sheet-thickness-laser-cutting)
-   - [Example 2: Fixed Layer Count with Labels & Combined Preview](#example-2-fixed-layer-count-with-labels--combined-preview)
-   - [Example 3: Custom Water Level & Styling](#example-3-custom-water-level--styling)
-   - [Example 4: Preparing for Laser Cutter CAM (LightBurn, Glowforge, etc.)](#example-4-preparing-for-laser-cutter-cam-lightburn-glowforge-etc)
-7. [Using as a Python Module](#using-as-a-python-module)
-8. [Tips & Troubleshooting](#tips--troubleshooting)
+Kifejezetten **lézervágáshoz**, **CNC maráshoz**, **rétegzett domborzati modellekhez** (rétegelt lemez, karton, akril) és **kartográfiai vektortervezéshez** tervezve.
 
 ---
 
-## Key Features
+## Tartalomjegyzék
 
-- **Unified Global Coordinate System**: All generated SVG files share the identical `viewBox` and dimensions. Stacked sheets line up with 100% precision without manual repositioning.
-- **Red Alignment Guides on Every Slice**: Every layer automatically has the outline of the layer *above* it rendered in red (`#FF0000`), allowing you to score or engrave the exact placement marks on the physical sheet before assembly.
-- **Water Body Extraction**: Automatically detects flat water surfaces (rivers, lakes, sea) and draws their outlines/islands on the bottom baseboard slice in blue (`#0066CC`).
-- **Laser-Cutter Ready Color Mapping**:
-  - **Black (`#000000`)**: Current layer cut line.
-  - **Red (`#FF0000`)**: Alignment score line for the next layer.
-  - **Blue (`#0066CC`)**: Waterline engrave/score line.
-- **Flexible Slicing Modes**: Slice by count (`-n 10`) or by physical material thickness (`-s 3.0` for 3 mm sheets).
-- **Even-Odd Fill Handling**: Proper handling of hollow terrain, valleys, multi-peak islands, and lake boundaries.
-- **Combined Visualization**: Option to export an `all_slices.svg` file with all layers stacked and colored along an elevation gradient.
+1. [Főbb jellemzők](https://www.google.com/search?q=%2523f%25C5%2591bb-jellemz%25C5%2591k&utm_source=gemini)
+2. [Telepítés és követelmények](https://www.google.com/search?q=%2523telep%25C3%25ADt%25C3%25A9s-%25C3%25A9s-k%25C3%25B6vetelm%25C3%25A9nyek&utm_source=gemini)
+3. [Gyors útmutató](https://www.google.com/search?q=%2523gyors-%25C3%25BAtmutat%25C3%25B3&utm_source=gemini)
+4. [A rétegek egymásra helyezésének működése](https://www.google.com/search?q=%2523a-r%25C3%25A9tegek-egym%25C3%25A1sra-helyez%25C3%25A9s%25C3%25A9nek-m%25C5%25B1k%25C3%25B6d%25C3%25A9se&utm_source=gemini)
+* [Következő réteg illesztési segédvonalai (piros)](https://www.google.com/search?q=%25231-k%25C3%25B6vetkez%25C5%2591-r%25C3%25A9teg-illeszt%25C3%25A9si-seg%25C3%25A9dvonalai-piros&utm_source=gemini)
+* [Vízfelület észlelése (kék)](https://www.google.com/search?q=%25232-v%25C3%25ADzfel%25C3%25BClet-%25C3%25A9szlel%25C3%25A9se-k%25C3%25A9k&utm_source=gemini)
+* [Vágóvonalak (fekete)](https://www.google.com/search?q=%25233-v%25C3%25A1g%25C3%25B3vonalak-fekete&utm_source=gemini)
+
+
+5. [Parancssori (CLI) kapcsolók áttekintése](https://www.google.com/search?q=%2523parancssori-cli-kapcsol%25C3%25B3k-%25C3%25A1ttekint%25C3%25A9se&utm_source=gemini)
+6. [Gyakorlati használati példák](https://www.google.com/search?q=%2523gyakorlati-haszn%25C3%25A1lati-p%25C3%25A9ld%25C3%25A1k&utm_source=gemini)
+* [1. példa: Fix lemezvastagság (lézervágás)](https://www.google.com/search?q=%25231-p%25C3%25A9lda-fix-lemezvastags%25C3%25A1g-l%25C3%25A9zerv%25C3%25A1g%25C3%25A1s&utm_source=gemini)
+* [2. példa: Fix rétegszám címkékkel és egyesített előnézettel](https://www.google.com/search?q=%25232-p%25C3%25A9lda-fix-r%25C3%25A9tegsz%25C3%25A1m-c%25C3%25ADmk%25C3%25A9kkel-%25C3%25A9s-egyes%25C3%25ADtett-el%25C5%2591n%25C3%25A9zettel&utm_source=gemini)
+* [3. példa: Egyedi vízszint és stílus](https://www.google.com/search?q=%25233-p%25C3%25A9lda-egyedi-v%25C3%25ADzszint-%25C3%25A9s-st%25C3%25ADlus&utm_source=gemini)
+* [4. példa: Előkészítés lézeres CAM szoftverekhez (LightBurn, Glowforge stb.)](https://www.google.com/search?q=%25234-p%25C3%25A9lda-el%25C5%2591k%25C3%25A9sz%25C3%25ADt%25C3%25A9s-l%25C3%25A9zeres-cam-szoftverekhez-lightburn-glowforge-stb&utm_source=gemini)
+
+
+7. [Használat Python modulként](https://www.google.com/search?q=%2523haszn%25C3%25A1lat-python-modulk%25C3%25A9nt&utm_source=gemini)
+8. [Tippek és hibaelhárítás](https://www.google.com/search?q=%2523tippek-%25C3%25A9s-hibaelh%25C3%25A1r%25C3%25ADt%25C3%25A1s&utm_source=gemini)
 
 ---
 
-## Installation & Requirements
+## Főbb jellemzők
 
-The slicer runs on **Python 3.10+** and relies on three standard libraries:
+* **Egységes globális koordináta-rendszer**: Az összes létrehozott SVG fájl azonos `viewBox` értékkel és méretekkel rendelkezik. Az egymásra helyezett lapok 100%-os pontossággal illeszkednek, kézi igazítás nélkül.
+* **Piros illesztési segédvonalak minden szeleten**: Minden réteg automatikusan tartalmazza a *felette* lévő réteg körvonalát piros színnel (`#FF0000`), így még az összeszerelés előtt megjelölhetők vagy gravírozhatók a pontos pozíciók a fizikai lemezen.
+* **Vízfelületek kinyerése**: Automatikusan felismeri a sík vízfelületeket (folyók, tavak, tenger), és megrajzolja azok körvonalait/szigeteit a legalsó alapszeleten kék színnel (`#0066CC`).
+* **Lézervágásra kész színleképezés**:
+* **Fekete (`#000000`)**: Aktuális réteg vágóvonala.
+* **Piros (`#FF0000`)**: Illesztési jelölővonal a következő réteghez.
+* **Kék (`#0066CC`)**: Vízparti gravírozási/jelölési vonal.
+
+
+* **Rugalmas szeletelési módok**: Szeletelés darabszám alapján (`-n 10`) vagy fizikai anyagvastagság szerint (`-s 3.0` 3 mm-es lemezekhez).
+* **Even-Odd kitöltéskezelés**: Megfelelően kezeli az üreges terepeket, völgyeket, többcsúcsú szigeteket és tóhatárokat.
+* **Egyesített vizualizáció**: Lehetőség van egy `all_slices.svg` fájl exportálására, amely az összes réteget egymásra helyezve, magassági színátmenettel ábrázolja.
+
+---
+
+## Telepítés és követelmények
+
+A szeletelő futtatásához **Python 3.10+** verzió és három szabványos könyvtár szükséges:
 
 ```powershell
 pip install trimesh shapely numpy
+
 ```
 
 ---
 
-## Quick Start
+## Gyors útmutató
 
-Navigate to the directory containing `stl_slicer.py` and your STL file:
+Nyissa meg a terminált abban a mappában, amely a `stl_slicer.py` fájlt és a kívánt STL fájlt tartalmazza:
 
 ```powershell
-# Basic 10-layer slice (automatically finds any STL in current folder)
+# Alapvető 10 réteges szeletelés (automatikusan megkeresi az STL fájlt a mappában)
 python stl_slicer.py -n 10
 
-# Generate 15 layers with labels and a combined all_slices.svg preview
+# 15 réteg generálása feliratokkal és egyesített all_slices.svg előnézettel
 python stl_slicer.py -n 15 --labels --combine
+
 ```
 
-Output files will be saved in the `./slices/` folder.
+A kimeneti fájlok a `./slices/` mappába kerülnek mentésre.
 
 ---
 
-## How Layer Stacking Works
+## A rétegek egymásra helyezésének működése
 
-When fabricating stacked 3D topography models, each SVG slice is structured into semantic SVG groups with distinct colors:
+Rétegzett 3D domborzati modellek készítésekor minden egyes SVG szelet szemantikus, különböző színű SVG csoportokba van strukturálva:
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│ SVG Canvas (viewBox matches entire model bounding box) │
+│ SVG vászon (a viewBox a teljes modell befoglaló mérete)│
 │                                                        │
-│   [Blue #0066CC]  Water / Shoreline (Layer 1 only)     │
-│   [Red  #FF0000]  Next Layer Guide (Where L+1 sits)    │
-│   [Black #000000] Cut Line (Perimeter of current layer)│
+│   [Kék  #0066CC]  Víz / Partvonal (csak az 1. rétegen) │
+│   [Piros #FF0000] Következő réteg segédvonala (L+1)    │
+│   [Fekete #000000] Vágóvonal (aktuális réteg kerülete) │
 │                                                        │
 └────────────────────────────────────────────────────────┘
+
 ```
 
-### 1. Next-Level Alignment Guides (Red)
-- On Slice 1, a red outline shows exactly where Slice 2 should be glued.
-- On Slice 2, a red outline shows where Slice 3 should be glued, and so on.
-- The top layer automatically omits the guide since nothing goes above it.
-- **Laser workflow**: Set the red stroke to low-power **Vector Engrave / Score**.
+### 1. Következő réteg illesztési segédvonalai (piros)
 
-### 2. Water Surface Detection (Blue)
-- Digital elevation models (DEMs) typically flatten water bodies (e.g. the Danube river in `terrain-184734.stl`) to a uniform plateau at the lowest elevations.
-- The script analyzes the surface face normals and elevation histogram to detect water bodies.
-- On the **bottom slice (baseboard)**, shorelines and internal islands (e.g. Szentendre Island) are rendered in blue.
-- **Laser workflow**: Set the blue stroke to **Engrave** or light **Score**.
+* Az 1. szeleten egy piros körvonal mutatja a 2. szelet pontos ragasztási helyét.
+* A 2. szeleten egy piros körvonal mutatja a 3. szelet ragasztási helyét, és így tovább.
+* A legfelső rétegről a segédvonal automatikusan elmarad, mivel arra már nem kerül újabb elem.
+* **Lézeres munkafolyamat**: Állítsa a piros vonalat alacsony teljesítményű **vektorgravírozásra / karcolásra (Score)**.
 
-### 3. Cut Lines (Black)
-- The actual outer boundary of the current slice.
-- **Laser workflow**: Set the black stroke to full-power **Cut**.
+### 2. Vízfelület észlelése (kék)
+
+* A digitális domborzatmodellek (DEM) a vízfelületeket (például a Duna vonalát a `terrain-184734.stl` fájlban) általában a legalacsonyabb magasságú, egységes fennsíkként rögzítik.
+* A parancsfájl a felületi normálisok és a magassági hisztogram elemzésével azonosítja a vízfelületeket.
+* A **legalsó szeleten (alaplemezen)** a partvonalak és a belső szigetek (például a Szentendrei-sziget) kék színnel jelennek meg.
+* **Lézeres munkafolyamat**: Állítsa a kék vonalat **gravírozásra (Engrave)** vagy enyhe **karcolásra (Score)**.
+
+### 3. Vágóvonalak (fekete)
+
+* Az aktuális réteg tényleges külső határa.
+* **Lézeres munkafolyamat**: Állítsa a fekete vonalat teljes teljesítményű **vágásra (Cut)**.
 
 ---
 
-## CLI Options Reference
+## Parancssori (CLI) kapcsolók áttekintése
 
 ```powershell
-python stl_slicer.py [stl_file] [options]
+python stl_slicer.py [stl_fájl] [kapcsolók]
+
 ```
 
-### General & Input/Output
+### Általános és be-/kimeneti beállítások
 
-| Argument | Default | Description |
-| :--- | :--- | :--- |
-| `stl_file` | First `.stl` in dir | Path to input STL file. If omitted, uses first `.stl` found. |
-| `-o`, `--out-dir` | `slices` | Output folder to store generated SVG files. |
-| `--prefix` | STL filename | Custom prefix for exported files. |
-| `--combine` | `False` | Also export `*_all_slices.svg` containing all layers stacked. |
-| `--labels` | `False` | Print layer index & Z height text in the top-left margin. |
-| `--precision` | `3` | Coordinate decimal places in SVG `d="..."` paths (keeps files compact). |
-| `--units` | `mm` | Unit suffix in SVG header (`width="...mm" height="...mm"`). |
+| Argumentum | Alapértelmezett | Leírás |
+| --- | --- | --- |
+| `stl_file` | Első `.stl` a mappában | A bemeneti STL fájl elérési útja. Ha hiányzik, az első talált `.stl` fájlt használja. |
+| `-o`, `--out-dir` | `slices` | A létrehozott SVG fájlok célmappája. |
+| `--prefix` | STL fájlneve | Egyedi előtag az exportált fájlokhoz. |
+| `--combine` | `False` | Egy `*_all_slices.svg` fájl exportálása is, amely az összes réteget egymásra helyezve tartalmazza. |
+| `--labels` | `False` | Kiírja a réteg sorszámát és Z magasságát a bal felső margóra. |
+| `--precision` | `3` | Koordináták tizedesjegyeinek száma az SVG `d="..."` útvonalakban (csökkenti a fájlméretet). |
+| `--units` | `mm` | Mértékegység utótagja az SVG fejlécben (`width="...mm" height="...mm"`). |
 
-### Slicing Parameters
+### Szeletelési paraméterek
 
-| Option | Default | Description |
-| :--- | :--- | :--- |
-| `-n`, `--slices` | `10` | Total number of slices to generate. |
-| `-s`, `--step` | `None` | Fixed layer thickness in Z units (e.g., `3.0` mm). Overrides `-n`. |
-| `--z-min` | Mesh min Z | Lowest Z coordinate to start slicing. |
-| `--z-max` | Mesh max Z | Highest Z coordinate to stop slicing. |
-| `--spacing` | `midpoint` | `midpoint`: Slices through layer centers (best for physical stacking).<br>`linear`: Evenly spaced samples across the range. |
-| `--margin` | `5.0` | Outer padding in mm added around the mesh bounding box. |
+| Kapcsoló | Alapértelmezett | Leírás |
+| --- | --- | --- |
+| `-n`, `--slices` | `10` | Az előállítandó szeletek teljes száma. |
+| `-s`, `--step` | `None` | Fix rétegvastagság Z egységekben (pl. `3.0` mm). Felülírja a `-n` értéket. |
+| `--z-min` | Háló min Z | A legalacsonyabb Z koordináta, ahonnan a szeletelés indul. |
+| `--z-max` | Háló max Z | A legmagasabb Z koordináta, ahol a szeletelés véget ér. |
+| `--spacing` | `midpoint` | `midpoint`: A rétegek közepén vág át (legjobb fizikai rétegzéshez).<br>
 
-### Alignment Guide (Next Level) Styling
+<br>`linear`: Egyenletesen elosztott mintavételezés a tartományban. |
+| `--margin` | `5.0` | Külső margó milliméterben a modell befoglaló kerete körül. |
 
-| Option | Default | Description |
-| :--- | :--- | :--- |
-| `--next-stroke` | `#FF0000` | Stroke color for next level alignment outline (hex or name). |
-| `--next-stroke-width` | `0.35` | Stroke width for next level alignment outline. |
-| `--no-next-outline` | `False` | Disable the red next-level outline entirely. |
+### Illesztési segédvonal (következő szint) stílusa
 
-### Water Body Styling
+| Kapcsoló | Alapértelmezett | Leírás |
+| --- | --- | --- |
+| `--next-stroke` | `#FF0000` | A következő szint illesztési körvonalának színe (hex vagy színnév). |
+| `--next-stroke-width` | `0.35` | A következő szint illesztési körvonalának vonalvastagsága. |
+| `--no-next-outline` | `False` | A piros, következő szintet jelölő körvonal teljes kikapcsolása. |
 
-| Option | Default | Description |
-| :--- | :--- | :--- |
-| `--water-level` | `auto` | Height threshold for water. Can be `'auto'` or float (e.g. `5.5`). |
-| `--water-stroke` | `#0066CC` | Outline stroke color for water bodies. |
-| `--water-stroke-width` | `0.4` | Stroke width for water outlines. |
-| `--water-fill` | `none` | Fill color for water bodies (e.g. `"#E3F2FD"` for subtle blue). |
-| `--no-water` | `False` | Disable water detection and rendering on the bottom slice. |
+### Vízfelület stílusa
 
-### Cut Line & Canvas Styling
+| Kapcsoló | Alapértelmezett | Leírás |
+| --- | --- | --- |
+| `--water-level` | `auto` | A víz szintjének magassági küszöbértéke. Lehet `'auto'` vagy lebegőpontos szám (pl. `5.5`). |
+| `--water-stroke` | `#0066CC` | Vízfelületek körvonalának színe. |
+| `--water-stroke-width` | `0.4` | Vízfelületek körvonalának vonalvastagsága. |
+| `--water-fill` | `none` | Vízfelületek kitöltési színe (pl. `"#E3F2FD"` halványkékhez). |
+| `--no-water` | `False` | A víz észlelésének és megjelenítésének kikapcsolása az alsó szeleten. |
 
-| Option | Default | Description |
-| :--- | :--- | :--- |
-| `--stroke` | `#000000` | Stroke color for the current layer boundary (cut line). |
-| `--stroke-width` | `0.5` | Stroke width for the current layer boundary. |
-| `--fill` | `none` | Fill color for the current layer. |
-| `--no-flip-y` | `False` | Do not invert Y-axis (preserves raw 3D Cartesian coordinates). |
-| `--raw-coords` | `False` | Do not shift origin to `(0, 0)`; keeps original STL coordinates. |
+### Vágóvonal és vászon stílusa
+
+| Kapcsoló | Alapértelmezett | Leírás |
+| --- | --- | --- |
+| `--stroke` | `#000000` | Az aktuális réteg határvonalának színe (vágóvonal). |
+| `--stroke-width` | `0.5` | Az aktuális réteg határvonalának vonalvastagsága. |
+| `--fill` | `none` | Az aktuális réteg kitöltési színe. |
+| `--no-flip-y` | `False` | Ne tükrözze az Y tengelyt (megőrzi a nyers 3D Descartes-féle koordinátákat). |
+| `--raw-coords` | `False` | Ne tolja el az origót `(0, 0)` pontba; megtartja az eredeti STL koordinátákat. |
 
 ---
 
-## Practical Usage Examples
+## Gyakorlati használati példák
 
-### Example 1: Fixed Sheet Thickness (Laser Cutting)
-If you are using **3.0 mm plywood or MDF sheets**, slice by exact thickness:
+### 1. példa: Fix lemezvastagság (lézervágás)
+
+Amennyiben **3,0 mm-es rétegelt lemezt vagy MDF lapokat** használ, szeleteljen a pontos vastagság szerint:
 
 ```powershell
 python stl_slicer.py terrain-184734.stl -s 3.0 --labels -o slices_3mm
+
 ```
 
-### Example 2: Fixed Layer Count with Labels & Combined Preview
-Create 12 evenly distributed layers with embedded layer text and an `all_slices.svg` preview:
+### 2. példa: Fix rétegszám címkékkel és egyesített előnézettel
+
+12 egyenletesen elosztott réteg készítése beágyazott rétegszövegekkel és `all_slices.svg` előnézettel:
 
 ```powershell
 python stl_slicer.py -n 12 --labels --combine -o output_12layers
+
 ```
 
-### Example 3: Custom Water Level & Styling
-Fill the water on the bottom slice with a light blue shade and make the river outline cyan:
+### 3. példa: Egyedi vízszint és stílus
+
+A víz kitöltése az alsó szeleten világoskék árnyalattal, a folyó körvonalának ciánkékre állítása:
 
 ```powershell
 python stl_slicer.py -n 10 --water-fill "#D0E8FF" --water-stroke "#0088DD" --combine
+
 ```
 
-### Example 4: Preparing for Laser Cutter CAM (LightBurn, Glowforge, etc.)
-Laser software assigns cut settings by stroke color:
-- **Black `#000000`** $\rightarrow$ Layer Cut (High power, slow speed)
-- **Red `#FF0000`** $\rightarrow$ Alignment Score (Low power, high speed)
-- **Blue `#0066CC`** $\rightarrow$ Water Engrave / Score (Medium power)
+### 4. példa: Előkészítés lézeres CAM szoftverekhez (LightBurn, Glowforge stb.)
 
-Use fine hairline strokes for laser cutting:
+A lézerszoftverek a vonalszínek alapján rendelik hozzá a vágási paramétereket:
+
+* **Fekete `#000000**` $\rightarrow$ Réteg vágása (Nagy teljesítmény, lassú sebesség)
+* **Piros `#FF0000**` $\rightarrow$ Illesztési jelölés (Alacsony teljesítmény, nagy sebesség)
+* **Kék `#0066CC**` $\rightarrow$ Víz gravírozása / karcolása (Közepes teljesítmény)
+
+Használjon vékony vonalvastagságot a precíz vágáshoz:
 
 ```powershell
 python stl_slicer.py -n 15 --stroke-width 0.1 --next-stroke-width 0.1 --water-stroke-width 0.1
+
 ```
 
 ---
 
-## Using as a Python Module
+## Használat Python modulként
 
-You can also import `slice_stl` directly into your own Python scripts or automated workflows:
+A `slice_stl` függvény közvetlenül is importálható saját Python szkriptekbe vagy automatizált folyamatokba:
 
 ```python
 from stl_slicer import slice_stl
@@ -215,23 +239,33 @@ saved_files = slice_stl(
     water_fill="#E3F2FD"
 )
 
-print(f"Generated {len(saved_files)} slice files.")
+print(f"Létrehozva {len(saved_files)} szeletfájl.")
+
 ```
 
 ---
 
-## Tips & Troubleshooting
+## Tippek és hibaelhárítás
 
-1. **Why does the bottom slice (Layer 1) look rectangular?**
-   - In 3D terrain STL files, there is a flat solid pedestal / base plate underneath the terrain. Layer 1 cuts through this solid baseplate, giving you the solid baseboard for your stacked model. On this baseboard, the Danube water body and the red outline for Layer 2 are drawn.
-2. **How to slice only the mountain relief (skipping the pedestal)?**
-   - Check the mesh info printed by the script. For `terrain-184734.stl`, terrain begins at $Z \approx 5.1\,\text{mm}$.
-   - To slice only above the baseplate:
-     ```powershell
-     python stl_slicer.py --z-min 5.2 -n 10
-     ```
-3. **Opening SVGs in Vector Software (Inkscape / Illustrator)**:
-   - Each SVG contains grouped elements with `id="layer_XX"`, `id="next_layer_guide"`, and `id="water_bodies"`.
-   - In the **Layers & Objects panel**, you can toggle or lock the alignment guide or water layer with a single click.
-4. **File Sizes**:
-   - The `--precision 3` default formats coordinates to 3 decimal places (1 micron precision in mm), reducing SVG file sizes by up to 70% compared to raw float exports while preserving full detail.
+1. **Miért négyszögletes az alsó szelet (1. réteg)?**
+* A 3D terep STL fájlokban a domborzat alatt egy lapos, tömör talapzat / alaplemez található. Az 1. réteg ezen a tömör alapon halad át, így egy stabil alaplapot biztosít a modell felépítéséhez. Erre az alaplemezre kerül a Duna vízfelülete és a 2. réteg piros illesztési körvonala.
+
+
+2. **Hogyan lehet csak a hegydomborzatot szeletelni (a talapzat kihagyásával)?**
+* Ellenőrizze a szkript által kiírt hálóinformációkat. A `terrain-184734.stl` esetében a terep $Z \approx 5.1\,\text{mm}$ magasságban kezdődik.
+* Ha csak az alaplap feletti részt szeretné szeletelni:
+```powershell
+python stl_slicer.py --z-min 5.2 -n 10
+
+```
+
+
+
+
+3. **SVG-k megnyitása vektorgrafikus szoftverekben (Inkscape / Illustrator)**:
+* Mindegyik SVG csoportosított elemeket tartalmaz `id="layer_XX"`, `id="next_layer_guide"` és `id="water_bodies"` azonosítókkal.
+* A **Rétegek és objektumok (Layers & Objects) panelen** egyetlen kattintással ki- és bekapcsolhatja vagy zárolhatja az illesztési segédvonalakat vagy a vízréteget.
+
+
+4. **Fájlméretek**:
+* Az alapértelmezett `--precision 3` beállítás a koordinátákat 3 tizedesjegyre kerekíti (1 mikronos pontosság mm-ben számolva), ami akár 70%-kal csökkenti az SVG fájlok méretét a nyers lebegőpontos értékekhez képest, miközben minden részletet megőriz.
